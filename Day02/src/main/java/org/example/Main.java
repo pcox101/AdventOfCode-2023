@@ -12,7 +12,7 @@ public class Main {
             String line = br.readLine();
 
             while (line != null) {
-                System.out.println("The data: " + line);
+                System.out.println("The data: " + line + ".");
 
 
                 line = br.readLine();
