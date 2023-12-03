@@ -9,6 +9,7 @@
         <module name="Day01" />
         <module name="Day02" />
         <module name="Day03" />
+        <module name="Day04" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
