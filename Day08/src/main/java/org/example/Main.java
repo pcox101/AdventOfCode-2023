@@ -34,15 +34,18 @@ public class Main {
             //HowManySteps("AAA", false, LR, leftMap, rightMap);
 
             DoPartTwo(LR, leftMap, rightMap);
+            DoPartTwoTheGenericWay(LR, leftMap, rightMap);
+
 
         } catch (Exception ex) {
             System.out.println("There was an exception: " + ex);
         }
     }
 
-    private static Integer HowManySteps(String location, Boolean fullZ, String LR, Map<String, String> leftMap, Map<String, String> rightMap) {
+    private static Integer HowManySteps(String startLocation, Boolean fullZ, String LR, Map<String, String> leftMap, Map<String, String> rightMap) {
         Integer counter = 0;
         Integer lrOffset = 0;
+        String location = startLocation;
         while ((fullZ && !location.equals("ZZZ")) || (!fullZ && !location.endsWith("Z"))) {
             String leftOrRight = LR.substring(lrOffset, lrOffset + 1);
             if (leftOrRight.equals("L")) {
@@ -57,7 +60,7 @@ public class Main {
             }
         }
 
-        System.out.println(String.format("Number of steps for location %s: %d", location, counter));
+        System.out.println(String.format("Number of steps for location %s to %s: %d", startLocation, location, counter));
         return counter;
     }
 
@@ -104,6 +107,84 @@ public class Main {
 
         System.out.println(String.format("Lowest common multiple is %d.", lcm));
 
+
+    }
+
+    private static void DoPartTwoTheGenericWay(String LR, Map<String, String> leftMap, Map<String, String> rightMap) throws Exception {
+        class PeriodInformation
+        {
+            Integer StepsToFirstZ;
+            Integer InitialPeriod;
+            Integer Period;
+        }
+
+        List<String> locations = new ArrayList<>();
+        for (Map.Entry<String, String> starts : leftMap.entrySet()) {
+            if (starts.getKey().endsWith("A")) {
+                locations.add(starts.getKey());
+            }
+        }
+
+        System.out.println(String.format("Running %d locations simultaneously.", locations.size()));
+
+        List<PeriodInformation> numberOfStepsList = new ArrayList<>();
+
+        for (Integer i = 0; i < locations.size(); i++) {
+            Integer counter = 0;
+            Integer lrOffset = 0;
+            String location = locations.get(i);
+            HashMap<String, Integer> visitedLocations = new HashMap<>();
+            visitedLocations.put(location, counter);
+
+            Boolean done = false;
+            Integer firstZ = 0;
+            while (!done) {
+                String leftOrRight = LR.substring(lrOffset, lrOffset + 1);
+                if (leftOrRight.equals("L")) {
+                    location = leftMap.get(location);
+                } else {
+                    location = rightMap.get(location);
+                }
+
+                counter++;
+                lrOffset++;
+                if (lrOffset + 1 > LR.length()) {
+                    lrOffset = 0;
+                }
+
+                if (location.endsWith("Z"))
+                {
+                    if (firstZ != 0)
+                    {
+                        throw new Exception("More than one Z");
+                    }
+                    firstZ = counter;
+                }
+
+                String locationKey = String.format("%s%d",location,lrOffset);
+                if (!visitedLocations.containsKey(locationKey))
+                {
+                    visitedLocations.put(locationKey, counter);
+                }
+                else
+                {
+                    // We've been here before.
+                    done = true;
+                    PeriodInformation pi = new PeriodInformation();
+                    pi.InitialPeriod = visitedLocations.get(locationKey);
+                    pi.Period = counter - pi.InitialPeriod;
+                    pi.StepsToFirstZ = firstZ;
+                    numberOfStepsList.add(pi);
+                }
+            }
+        }
+
+        // At this point, the steps to the first Z is identical to the period
+        // so we can just use the LCM that was provided in the simple solution.
+        // Otherwise we would need to find the LCM between the periods as well
+        // as considering how many steps to each of the Zs.
+        // We also know that there is only one Z per period, which simplifies
+        // things enormously.
 
     }
 }
