@@ -3,12 +3,16 @@ package org.example;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Main {
+
+
     public static void main(String[] args) {
         try {
-            BufferedReader br = new BufferedReader(new FileReader("Day10/src/main/resources/input.txt"));
+            BufferedReader br = new BufferedReader(new FileReader("Day11/src/main/resources/input.txt"));
             List<String> puzzleInput = new ArrayList<>();
 
             String line = br.readLine();
@@ -19,11 +23,8 @@ public class Main {
             int output = 0;
             System.out.println(String.format("Output: %d", output));
 
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             System.out.println("There was an exception: " + ex);
-
         }
     }
 }
