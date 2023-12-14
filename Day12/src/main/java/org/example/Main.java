@@ -3,9 +3,13 @@ package org.example;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
+
+    private static Map<String, Long> cache = new HashMap<>();
 
     public static void main(String[] args) {
         try {
@@ -22,7 +26,8 @@ public class Main {
                 for (String val: split2)
                     checkSums.add(Integer.parseInt(val));
 
-                possibleWaysPart1 += calculatePossibleWays(split[0], checkSums);
+                List<Integer> newCheckSums = new ArrayList<>(checkSums);
+                possibleWaysPart1 += calculatePossibleWays(split[0], newCheckSums);
 
                 String part2Split = String.format("%s?%s?%s?%s?%s", split[0],split[0],split[0],split[0],split[0]);
                 List<Integer> checkSumsPart2 = new ArrayList<>();
@@ -32,7 +37,9 @@ public class Main {
                 checkSumsPart2.addAll(checkSums);
                 checkSumsPart2.addAll(checkSums);
 
-                possibleWaysPart2 += calculatePossibleWays(part2Split, checkSumsPart2);
+                long i = calculatePossibleWays(part2Split, checkSumsPart2);
+                System.out.println(String.format("Possible ways: %d", i));
+                possibleWaysPart2 += i;
 
                 line = br.readLine();
             }
@@ -45,166 +52,99 @@ public class Main {
         }
     }
 
-    public static int calculatePossibleWays(String gameBoard, List<Integer> checkSums)
+    public static long calculatePossibleWays(String gameBoard, List<Integer> checkSums) throws Exception {
+        String cacheKey = gameBoard + "_";
+        for (Integer i : checkSums) {
+            cacheKey += Integer.toString(i) + "_";
+        }
+        if (cache.containsKey(cacheKey)) {
+            return cache.get(cacheKey);
+        }
+
+        //outputGameBoard(gameBoard, checkSums);
+
+        long value = GetCount(gameBoard, checkSums);
+        cache.put(cacheKey, value);
+
+        return value;
+    }
+
+    public static long GetCount(String gameBoard, List<Integer> groups) throws Exception
     {
-        List<String> possibleGameBoards = new ArrayList<>();
-        int possibleWays = 0;
-        for (int i = 0; i < gameBoard.length(); i++)
-        {
-            List<String> newPossibleGameBoards = new ArrayList<>();
-            char ch = gameBoard.charAt(i);
-            if (ch == '.')
-            {
-                if (i == 0)
-                {
-                    newPossibleGameBoards.add(".");
-                }
-                else {
-                    for (int j = 0; j < possibleGameBoards.size(); j++) {
-                        String newPossibleBoard = possibleGameBoards.get(j) + ".";
-                        if (isPartialPossible(newPossibleBoard, checkSums)) {
-                            newPossibleGameBoards.add(newPossibleBoard);
-                        }
-                    }
-                }
-            }
-            else if (ch == '#') {
-                if (i == 0) {
-                    newPossibleGameBoards.add("#");
-                } else
-                    // Just add it
-                    for (int j = 0; j < possibleGameBoards.size(); j++) {
-                        newPossibleGameBoards.add(possibleGameBoards.get(j) + "#");
-                    }
-            }
-            else {
-                if (i == 0) {
-                    // Add both to the starter
-                    newPossibleGameBoards.add("#");
-                    newPossibleGameBoards.add(".");
+        while (true) {
+            if (groups.size() == 0) {
+                // no more groups to match
+                // If there are any springs left in our gameboard
+                // this doesn't match
+                if (gameBoard.contains("#")) {
+                    return 0;
                 } else {
-                    // always add the hash (doesn't complete a group)
-                    // may be more efficient to check if this doesn't exceed the possibles, but it'll be removed
-                    // on the next . anyway
-                    for (int j = 0; j < possibleGameBoards.size(); j++) {
-                        newPossibleGameBoards.add(possibleGameBoards.get(j) + "#");
-                    }
-                    // Add the dot, only if this is possible
-                    for (int j = 0; j < possibleGameBoards.size(); j++) {
-                        String newPossibleBoard = possibleGameBoards.get(j) + ".";
-                        if (isPartialPossible(newPossibleBoard, checkSums)) {
-                            newPossibleGameBoards.add(newPossibleBoard);
-                        }
-                    }
+                    return 1;
                 }
             }
 
-            possibleGameBoards = newPossibleGameBoards;
-        }
-
-        // We should now have a list of possible boards which are checked up to the
-        // last group, so hopefully not too many and we can just check them each
-        // in turn
-        for (int j = 0; j < possibleGameBoards.size(); j++)
-        {
-            if (isPossible(possibleGameBoards.get(j), checkSums))
-            {
-                possibleWays++;
+            if (gameBoard.isEmpty()) {
+                // No more springs to match, although we still have groups
+                // no match
+                return 0;
             }
-        }
 
-        System.out.println(String.format("Possible ways for %s: %d", gameBoard, possibleWays));
+            if (gameBoard.startsWith(".")) {
+                gameBoard = gameBoard.replaceAll("^\\.*","");
+                continue;
+            }
 
-        return possibleWays;
-    }
+            if (gameBoard.startsWith("?")) {
+                // recurse
+                String newString = gameBoard.substring(1);
+                List<Integer> newGroup1 = new ArrayList<Integer>(groups);
+                List<Integer> newGroup2 = new ArrayList<Integer>(groups);
 
-    public static boolean isPossible(String gameBoard, List<Integer> checkSums)
-    {
-        //System.out.println("Final test");
-        //outputGameBoard(gameBoard, checkSums);
+                return calculatePossibleWays("." + newString, newGroup1)
+                        + calculatePossibleWays("#" + newString, newGroup2);
+            }
 
-        List<Integer> thisChecksum = new ArrayList<>();
-
-        int damagedCount = 0;
-        for (int i = 0; i < gameBoard.length(); i++)
-        {
-            char currentChar = gameBoard.charAt(i);
-            if (currentChar == '.')
-            {
-                if (damagedCount != 0)
-                {
-                    thisChecksum.add(damagedCount);
-                    damagedCount = 0;
+            if (gameBoard.startsWith("#")) {
+                // Start of a group, do we have any groups left?
+                if (groups.size() == 0) {
+                    return 0;
                 }
-            }
-            if (currentChar == '#')
-            {
-                damagedCount++;
-            }
-        }
 
-        // Check the last one
-        if (damagedCount > 0)
-        {
-            thisChecksum.add(damagedCount);
-        }
-
-        //outputGameBoard(gameBoard, thisChecksum);
-
-        // Now check that our checksums match
-        if (thisChecksum.size() == checkSums.size())
-        {
-            for (int i = 0; i < thisChecksum.size(); i++)
-            {
-                if (!thisChecksum.get(i).equals(checkSums.get(i)))
-                {
-                    return false;
+                int firstGroup = groups.get(0);
+                if (gameBoard.length() < firstGroup) {
+                    // not enough characters left to match the group
+                    return 0;
                 }
-            }
-        }
-        else
-        {
-            return false;
-        }
 
-        return true;
-    }
-
-    private static boolean isPartialPossible(String gameBoard, List<Integer> checkSums)
-    {
-        //outputGameBoard(gameBoard, checkSums);
-
-        int damagedCount = 0;
-        int currentCheckSumOffset = 0;
-        for (int i = 0; i < gameBoard.length(); i++)
-        {
-            char currentChar = gameBoard.charAt(i);
-            if (currentChar == '.')
-            {
-                if (damagedCount != 0)
-                {
-                    if (currentCheckSumOffset >= checkSums.size())
-                    {
-                        // Too many blocks
-                        return false;
+                // group cannot contain dots for the given length
+                // or it wouldn't be a whole group
+                for (int i = 0; i < firstGroup; i++) {
+                    if (gameBoard.charAt(i) == '.') {
+                        return 0;
                     }
-                    // Finished a block, check it matches
-                    if (checkSums.get(currentCheckSumOffset) != damagedCount) {
-                        //System.out.println("Not possible");
-                        return false;
-                    }
-                    damagedCount = 0;
-                    currentCheckSumOffset++;
                 }
+
+                // group must be equal to the exact size of the group
+                // if there is another group after it
+                if (groups.size() > 1) {
+                    if ((gameBoard.length() < firstGroup + 1) || (gameBoard.charAt(firstGroup) == '#')) {
+                        return 0;
+                    }
+
+                    // Move to the next group
+                    // Skip the character after the group
+                    gameBoard = gameBoard.substring(firstGroup + 1);
+                    groups.remove(0);
+                    continue;
+                }
+
+                gameBoard = gameBoard.substring(groups.get(0));
+                groups.remove(0);
+                continue;
             }
-            if (currentChar == '#')
-            {
-                damagedCount++;
-            }
+
+            throw new Exception("Invalid input");
         }
-        // it could be partial, so don't check the last one here.
-        //System.out.println("Still possible");
-        return true;
     }
 
     private static void outputGameBoard(String gameBoard, List<Integer> checkSums)
