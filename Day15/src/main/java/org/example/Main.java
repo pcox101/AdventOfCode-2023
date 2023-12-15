@@ -5,49 +5,6 @@ import java.io.FileReader;
 import java.util.*;
 
 public class Main {
-    private static class Box
-    {
-        public List<Lens> Lenses = new ArrayList<>();
-        public Box()
-        {
-            Lenses = new ArrayList<>();
-        }
-
-        public void addLens(Lens lens)
-        {
-            int lensToRemove = -1;
-            for (int i = 0; i < Lenses.size(); i++)
-            {
-                if (Lenses.get(i).Name.equals(lens.Name)) {
-                    lensToRemove = i;
-                    break;
-                }
-            }
-            if (lensToRemove != -1) {
-                Lenses.set(lensToRemove, lens);
-            }
-            else
-            {
-                Lenses.add(lens);
-            }
-        }
-
-        public void removeLens(String lensName)
-        {
-            int lensToRemove = -1;
-            for (int i = 0; i < Lenses.size(); i++)
-            {
-                if (Lenses.get(i).Name.equals(lensName)) {
-                    lensToRemove = i;
-                    break;
-                }
-            }
-            if (lensToRemove != -1)
-            {
-                Lenses.remove(lensToRemove);
-            }
-        }
-    }
 
     private static class Lens
     {
@@ -99,7 +56,7 @@ public class Main {
 
     private static long doPart2(String[] inputData)
     {
-        Box[] boxes = new Box[256];
+        Map<Integer, LinkedHashMap<String, Integer>> boxes = new HashMap<>();
 
         for (int i = 0; i < inputData.length; i++)
         {
@@ -110,22 +67,36 @@ public class Main {
                 if (letter == '-') {
                     int boxHash = calculateHASH(lensLabel.toString());
 
-                    if (boxes[boxHash] == null)
+                    if (boxes.containsKey(boxHash))
                     {
-                        boxes[boxHash] = new Box();
+                        if (boxes.get(boxHash).containsKey(lensLabel.toString()))
+                        {
+                            boxes.get(boxHash).remove(lensLabel.toString());
+                        }
                     }
-                    boxes[boxHash].removeLens(lensLabel.toString());
                 }
                 else if (letter == '=') {
                     // next character is the focal length, appears to be only 1 digit
                     int focalLength = inputData[i].charAt(j + 1) - '0';
                     int boxHash = calculateHASH(lensLabel.toString());
                     // add it to the map
-                    if (boxes[boxHash] == null)
+                    if (boxes.containsKey(boxHash))
                     {
-                        boxes[boxHash] = new Box();
+                        if (boxes.get(boxHash).containsKey(lensLabel.toString()))
+                        {
+                            boxes.get(boxHash).replace(lensLabel.toString(), focalLength);
+                        }
+                        else
+                        {
+                            boxes.get(boxHash).put(lensLabel.toString(), focalLength);
+                        }
                     }
-                    boxes[boxHash].addLens(new Lens(lensLabel.toString(), focalLength));
+                    else
+                    {
+                        LinkedHashMap<String, Integer> boxContents = new LinkedHashMap<>();
+                        boxContents.put(lensLabel.toString(), focalLength);
+                        boxes.put(boxHash, boxContents);
+                    }
                 }
                 else {
                     lensLabel.append(letter);
@@ -137,33 +108,31 @@ public class Main {
 
         // Calculate the focussing power
         long counter = 0;
-        for (int i = 0; i < boxes.length; i++)
-        {
-            if (boxes[i] != null) {
-                for (int j = 0; j < boxes[i].Lenses.size(); j++) {
-                    long lensPower = (i + 1) * (j + 1) * boxes[i].Lenses.get(j).FocalLength;
-                    System.out.println(String.format("%s: %d", boxes[i].Lenses.get(j).Name, lensPower));
-                    counter += lensPower;
-                }
+        for (Map.Entry<Integer, LinkedHashMap<String, Integer>> entry : boxes.entrySet()) {
+
+            int j = 1;
+            for (Map.Entry<String, Integer> entry2 : entry.getValue().entrySet()) {
+                long lensPower = (entry.getKey() + 1) * j * entry2.getValue();
+                System.out.println(String.format("%s: %d", entry2.getKey(), lensPower));
+                counter += lensPower;
+                j++;
             }
         }
 
         return counter;
     }
 
-    private static void outputBoxes(Box[] boxes)
+    private static void outputBoxes(Map<Integer, LinkedHashMap<String, Integer>> boxes)
     {
-        for (int i = 0; i < boxes.length; i++)
+
+        for (Map.Entry<Integer, LinkedHashMap<String, Integer>> entry : boxes.entrySet())
         {
-            if (boxes[i] != null) {
-                System.out.print(String.format("Box %d: ", i));
-                for (int j = 0; j < boxes[i].Lenses.size(); j++)
-                {
-                    Lens lens = boxes[i].Lenses.get(j);
-                    System.out.print(String.format("[%s %d] ", lens.Name, lens.FocalLength));
-                }
-                System.out.println();
+            System.out.print(String.format("Box %d: ", entry.getKey()));
+            for (Map.Entry<String, Integer> entry2 : entry.getValue().entrySet())
+            {
+                System.out.print(String.format("[%s %d] ", entry2.getKey(), entry2.getValue()));
             }
+            System.out.println();
         }
         System.out.println();
     }
