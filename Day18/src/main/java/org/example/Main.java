@@ -7,42 +7,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
-    private static class MinMax
+
+    private static class Corner
     {
-        public int minX = Integer.MAX_VALUE;
-        public int minY = Integer.MAX_VALUE;
-        public int maxX = Integer.MIN_VALUE;
-        public int maxY = Integer.MIN_VALUE;
+        public long X;
+        public long Y;
 
-        private void updateMinMax(int x, int y)
+        public Corner(long x, long y)
         {
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-        }
-    }
-
-    private static class Coordinate
-    {
-        public int X;
-        public int Y;
-
-        public String toString()
-        {
-            return String.format("%d,%d", X, Y);
-        }
-
-        public Coordinate(int x, int y)
-        {
-            X = x; Y = y;
-        }
-
-        public Coordinate(String coord)
-        {
-            String[] split = coord.split(",");
-            X = Integer.parseInt(split[0]);
-            Y = Integer.parseInt(split[1]);
+            X = x;
+            Y = y;
         }
     }
     public static void main(String[] args) {
@@ -55,13 +29,20 @@ public class Main {
             long outputPart1 = 0;
             long outputPart2 = 0;
 
-            int currentX = 0;
-            int currentY = 0;
+            long p1currentX = 0;
+            long p1currentY = 0;
+            long p1perimeter = 0;
 
-            MinMax minMax = new MinMax();
+            long p2currentX = 0;
+            long p2currentY = 0;
+            long p2perimeter = 0;
 
-            Map<String,String> gameBoard = new HashMap<>();
-            gameBoard.put("0,0", "000000");
+            List<Corner> part1corners = new ArrayList<>();
+            List<Corner> part2corners = new ArrayList<>();
+
+            part1corners.add(new Corner(0,0));
+            part2corners.add(new Corner(0,0));
+
             while (line != null) {
                 Matcher match = pattern.matcher(line);
 
@@ -69,16 +50,31 @@ public class Main {
                     String direction = match.group(1);
                     int number = Integer.parseInt(match.group(2));
                     String colour = match.group(3);
-                    int yOffset = direction.equals("D") ? -1 : direction.equals("U") ? 1 : 0;
-                    int xOffset = direction.equals("L") ? -1 : direction.equals("R") ? 1 : 0;
 
-                    for (int i = 0; i < number; i++)
-                    {
-                        currentY += yOffset;
-                        currentX += xOffset;
-                        minMax.updateMinMax(currentX, currentY);
-                        gameBoard.put(String.format("%s,%s", currentX, currentY), colour);
-                    }
+                    // Part 1
+
+                    p1perimeter += number;
+                    int yOffset = direction.equals("D") ? -number : direction.equals("U") ? number : 0;
+                    int xOffset = direction.equals("L") ? -number : direction.equals("R") ? number : 0;
+
+                    p1currentX = p1currentX + xOffset;
+                    p1currentY = p1currentY + yOffset;
+
+                    part1corners.add(new Corner(p1currentX, p1currentY));
+
+                    // part 2
+                    String hexDistance = colour.substring(0,5);
+                    number = Integer.parseInt(hexDistance, 16);
+                    direction = colour.substring(5,6);
+                    p2perimeter += number;
+
+                    yOffset = direction.equals("1") ? -number : direction.equals("3") ? number : 0;
+                    xOffset = direction.equals("2") ? -number : direction.equals("0") ? number : 0;
+
+                    p2currentX = p2currentX + xOffset;
+                    p2currentY = p2currentY + yOffset;
+
+                    part2corners.add(new Corner(p2currentX, p2currentY));
                 }
                 else {
                     throw new Exception("No match: " + line);
@@ -87,13 +83,9 @@ public class Main {
                 line = br.readLine();
             }
 
-            outputGameBoard(gameBoard, minMax);
+            outputPart1 = calculateArea(part1corners, p1perimeter);
 
-            floodFillGameBoard(gameBoard, minMax);
-
-            outputGameBoard(gameBoard, minMax);
-
-            outputPart1 = gameBoard.size();
+            outputPart2 = calculateArea(part2corners, p2perimeter);
 
             System.out.println(String.format("Output Part 1: %d", outputPart1));
             System.out.println(String.format("Output Part 2: %d", outputPart2));
@@ -103,73 +95,21 @@ public class Main {
         }
     }
 
-    private static void floodFillGameBoard(Map<String, String> gameBoard, MinMax minMax)
+    private static long calculateArea(List<Corner> corners, long perimeter)
     {
-        Set<String> outside = new HashSet<>();
-        for (int y = minMax.minY; y <= minMax.maxY; y++) {
-            for (int x = minMax.minX; x <= minMax.maxX; x++) {
-                String s = String.format("%d,%d", x, y);
-                if (!outside.contains(s) && !gameBoard.containsKey(s))
-                {
-                    // not tested yet.
-                    Set<String> tested = new HashSet<>();
-                    Queue<Coordinate> nextToTest = new LinkedList<>();
-                    boolean o = false;
-                    nextToTest.add(new Coordinate(x,y));
-                    tested.add(s);
-                    while (nextToTest.size() > 0) {
-                        Coordinate c = nextToTest.remove();
-                        for (int newX = c.X - 1; newX <= c.X + 1; newX++) {
-                            for (int newY = c.Y - 1; newY <= c.Y + 1; newY++) {
-                                if ((newX < minMax.minX)
-                                        || (newY < minMax.minY)
-                                        || (newX > minMax.maxX)
-                                        || (newY > minMax.maxY)) {
-                                    o = true;
-                                } else {
-                                    Coordinate nc = new Coordinate(newX, newY);
-                                    String st = nc.toString();
-                                    if (!outside.contains(st)
-                                        && !gameBoard.containsKey(st)
-                                        && !tested.contains(st)) {
-                                        tested.add(nc.toString());
-                                        nextToTest.add(nc);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // Flooded this
-                    if (!o) {
-                        for (String u : tested.stream().toList()) {
-                            gameBoard.put(u, "0000000");
-                        }
-                    } else {
-                        outside.addAll(tested);
-                    }
-                }
-            }
-        }
-    }
+        long counter = 0;
 
-    private static void outputGameBoard(Map<String, String> gameBoard, MinMax minMax)
-    {
-        System.out.println();
-        for (int y = minMax.maxY; y >= minMax.minY; y--)
+        for (int i = 0; i < corners.size() - 1; i++)
         {
-            for (int x = minMax.minX; x <= minMax.maxX; x++)
-            {
-                String s = String.format("%d,%d", x, y);
-                if (gameBoard.containsKey(s))
-                {
-                    System.out.print("#");
-                }
-                else
-                {
-                    System.out.print(".");
-                }
-            }
-            System.out.println();
+            counter += corners.get(i).Y * corners.get(i + 1).X;
+            counter -= corners.get(i).X * corners.get(i + 1).Y;
         }
+
+        // add the perimeter
+        counter += perimeter;
+
+        counter = counter / 2 + 1;
+
+        return counter;
     }
 }
