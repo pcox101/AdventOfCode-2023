@@ -26,6 +26,7 @@
         <module name="Day14" />
         <module name="Day20" />
         <module name="Day10" />
+        <module name="Day21" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
