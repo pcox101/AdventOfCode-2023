@@ -6,30 +6,31 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="Day08" />
         <module name="Day19" />
-        <module name="Day09" />
-        <module name="Day04" />
         <module name="Day15" />
-        <module name="Day05" />
         <module name="Day16" />
-        <module name="Day06" />
         <module name="Day17" />
-        <module name="Day07" />
         <module name="Day18" />
-        <module name="Day11" />
         <module name="Day22" />
         <module name="Day01" />
-        <module name="Day12" />
         <module name="Day23" />
         <module name="Day02" />
-        <module name="Day13" />
         <module name="Day24" />
         <module name="Day03" />
-        <module name="Day14" />
+        <module name="Day25" />
         <module name="Day20" />
-        <module name="Day10" />
         <module name="Day21" />
+        <module name="Day08" />
+        <module name="Day09" />
+        <module name="Day04" />
+        <module name="Day05" />
+        <module name="Day06" />
+        <module name="Day07" />
+        <module name="Day11" />
+        <module name="Day12" />
+        <module name="Day13" />
+        <module name="Day14" />
+        <module name="Day10" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
